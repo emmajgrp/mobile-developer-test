@@ -1,0 +1,71 @@
+
+# coding: utf-8
+
+# In[66]:
+
+#assumptions: - secret value is hard coded into web app
+#             - invalid imput implies username and/or password were 
+#               blank or contained only integers
+
+import cgi
+from http.server import BaseHTTPRequestHandler,HTTPServer
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(bytes("<html><head><title>Login</title></head>", "utf-8"))
+        self.wfile.write(bytes("<body><p>Login page for Emma</p>", "utf-8"))
+        self.wfile.write(bytes("""
+            <html><head></head>
+            <body>
+            <form method="POST">
+              Username: <input type="text" name="un"><br>
+              Password: <input type="text" name="pw"><br>
+              <input type="submit" value="Login">
+            </form>
+            </body>
+            </html>
+            """, "utf-8"))
+        return
+
+    def do_POST(self):
+        self.send_response(200)
+        self.end_headers()
+        form = cgi.FieldStorage(fp=self.rfile, headers=self.headers,
+            environ={'REQUEST_METHOD':'POST',
+                     'CONTENT_TYPE':self.headers['Content-Type'],})
+        try:
+            unIn = form["un"].value
+            pwIn = form["pw"].value
+        except KeyError:
+            self.wfile.write(bytes("<title>Invalid input</title>", "utf-8"))
+            self.send_error(400, "Invalid input", "Neither the username nor the password may be blank. Please return to the previous page to try again")
+            return
+        
+        if(unIn == "demo" and pwIn == "demo01"):
+            self.wfile.write(bytes("<html><head><title>Login success\n</title></head>", "utf-8"))
+            self.send_response(200, "Login success")
+            self.end_headers()
+            self.wfile.write(bytes("<p>secret value: carrot</p>", "utf-8"))
+        elif(unIn.isdigit() or pwIn.isdigit()):
+            self.wfile.write(bytes("<title>Invalid input</title>", "utf-8"))
+            self.send_error(400, "Invalid input", "Input may not contain only integers. Please return to the previous page to try again")
+        else:
+            self.wfile.write(bytes("<title>Invalid credentials</title>", "utf-8"))
+            self.send_error(401, "Invalid credentials", "Username and/or password incorrect. Please return to the previous page to try again")
+        return
+    
+server = HTTPServer(('', 8080), Handler)
+
+try:
+    server.serve_forever()
+except KeyboardInterrupt:
+    server.shutdown()
+
+server.server_close()
+
+
+# In[ ]:
+
+
+
